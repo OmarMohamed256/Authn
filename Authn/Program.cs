@@ -1,39 +1,26 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+})
     .AddCookie(options =>
     {
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/denied";
-        options.Events = new CookieAuthenticationEvents()
-        {
-            OnSigningIn = async context =>
-            {
-                var principal = context.Principal;
-                if(principal.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
-                {
-                    if(principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value == "bob")
-                    {
-                        var claimsIdentity = principal.Identity as ClaimsIdentity;
-                        claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, "Admin"));
-                    }
-                }
-                await Task.CompletedTask;
-            },
-            OnSignedIn = async context =>
-            {
-                await Task.CompletedTask;
-            },
-            OnValidatePrincipal = async context =>
-            {
-                await Task.CompletedTask;
-            }
-        };
+    }).AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration.GetValue<string>("ClientId");
+        options.ClientSecret = builder.Configuration.GetValue<string>("ClientSecret");
+        options.CallbackPath = "/auth";
+        options.AuthorizationEndpoint += "?prompt=consent";
     });
 
 var app = builder.Build();
