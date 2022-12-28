@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,13 +11,13 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = "GoogleOpenID";
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
     .AddCookie(options =>
     {
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/denied";
-    }).AddOpenIdConnect("GoogleOpenID", options =>
+    }).AddOpenIdConnect("google", options =>
     {
         options.Authority = "https://accounts.google.com";
         options.ClientId = builder.Configuration.GetValue<string>("ClientId");
@@ -35,6 +36,14 @@ builder.Services.AddAuthentication(options =>
                 }
             }
         };
+    }).AddOpenIdConnect("okta", options =>
+    {
+        options.Authority = "https://dev-31901579.okta.com/oauth2/default";
+        options.ClientId = "0oa7rlfgqjoxjoXhw5d7";
+        options.ClientSecret = "ZxnXlAky42wQmnT2LafouOw8ylqwqNFwMbzJjcdj";
+        options.CallbackPath = "/okta-auth";
+        options.ResponseType = OpenIdConnectResponseType.Code;
+
     });
     //.AddGoogle(options =>
     //{
